@@ -1,68 +1,48 @@
-# Quelques codes d''échappement
-CLEARSCR="\x1B[2J\x1B[;H" # Clear SCReen
-CLEAREOS = "\x1B[J" # Clear End Of Screen
-CLEARELN = "\x1B[2K" # Clear Entire LiNe
-CLEARCUP = "\x1B[1J" # Clear Curseur UP
-GOTOYX = "\x1B[%.2d;%.2dH" # (''H'' ou ''f'') : Goto at (y,x), voir le code
-DELAFCURSOR = "\x1B[K" # effacer après la position du curseur
-CRLF = "\r\n" # Retour à la ligne
-# VT100 : Actions sur le curseur
-CURSON = "\x1B[?25h" # Curseur visible
-CURSOFF = "\x1B[?25l" # Curseur invisible
-# VT100 : Actions sur les caractères affichables
-NORMAL = "\x1B[0m" # Normal
-BOLD = "\x1B[1m" # Gras
-UNDERLINE = "\x1B[4m" # Souligné
-# VT100 : Couleurs : "22" pour normal intensity
-CL_BLACK="\033[22;30m" # Noir. NE PAS UTILISER. On verra rien !!
-CL_RED="\033[22;31m" # Rouge
-CL_GREEN="\033[22;32m" # Vert
-CL_BROWN = "\033[22;33m" # Brun
-CL_BLUE="\033[22;34m" # Bleu
-CL_MAGENTA="\033[22;35m" # Magenta
-CL_CYAN="\033[22;36m" # Cyan
-CL_GRAY="\033[22;37m" # Gris
-# "01" pour quoi ? (bold ?)
-CL_DARKGRAY="\033[01;30m" # Gris foncé
-CL_LIGHTRED="\033[01;31m" # Rouge clair
-CL_LIGHTGREEN="\033[01;32m" # Vert clair
-CL_YELLOW="\033[01;33m" # Jaune
-CL_LIGHTBLU= "\033[01;34m" # Bleu clair
-CL_LIGHTMAGENTA="\033[01;35m" # Magenta clair
-CL_LIGHTCYAN="\033[01;36m" # Cyan clair
-CL_WHITE="\033[01;37m" # Blanc
-
-
-
 import multiprocessing as mp
 import os, time,math, random, sys, ctypes, signal
+from utils import *
 # Une liste de couleurs à affecter aléatoirement aux chevaux
 lyst_colors=[CL_WHITE, CL_RED, CL_GREEN, CL_BROWN , CL_BLUE, CL_MAGENTA, CL_CYAN, CL_GRAY,
 CL_DARKGRAY, CL_LIGHTRED, CL_LIGHTGREEN, CL_LIGHTBLU, CL_YELLOW, CL_LIGHTMAGENTA, CL_LIGHTCYAN]
-def effacer_ecran() : print(CLEARSCR,end='')
-def erase_line_from_beg_to_curs() : print("\033[1K",end='')
-def curseur_invisible() : print(CURSOFF,end='')
-def curseur_visible() : print(CURSON,end='')
-def move_to(lig, col) : print("\033[" + str(lig) + ";" + str(col) + "f",end='')
-def en_couleur(Coul) : print(Coul,end='')
-def en_rouge() : print(CL_RED,end='') # Un exemple !
-def erase_line() : print(CLEARELN,end='')
+
 
 # La tache d''un cheval
-def un_cheval(ma_ligne : int, keep_running) : # ma_ligne commence à 0
+def un_cheval(ma_ligne : int, keep_running, realTimePosition) : # ma_ligne commence à 0
     col=1
-    while col < LONGEUR_COURSE and keep_running.value :
+    while keep_running.value :
         move_to(ma_ligne+1,col) # pour effacer toute ma ligne
         erase_line_from_beg_to_curs()
         en_couleur(lyst_colors[ma_ligne%len(lyst_colors)])
-        print('(' + chr(ord('A')+ma_ligne) + '>')
+        print(f'({chr(ord("A")+ma_ligne)}>', end='', flush=True) # Affiche le cheval
         col+=1
-
+        realTimePosition[ma_ligne] = col
+        
         time.sleep(0.1 * random.randint(1,5))
-# Le premier arrivée gèle la course !
-# J’ai fini, je me dis à tout le monde
-    keep_running.value=False
-#−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−    
+    # désormais, c'est l'arbitre qui va geler la course en cas de finish
+#−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−
+
+
+def arbitre(keep_running, realTimePosition):
+    while True:
+        time.sleep(0.1) # temps minimum d'attente d'un cheval donc pas de problème 
+        
+        if not keep_running.value : # Si la course est finie
+            break
+        firstPlayer = max(range(len(realTimePosition)), key=lambda i: realTimePosition[i])
+        lastPlayer = min(range(len(realTimePosition)), key=lambda i: realTimePosition[i])
+        
+        move_to(Nb_process + 2, 1)
+        # print(firstPlayer)
+        en_couleur(CL_WHITE)
+        
+        print(str(chr(ord('A') + firstPlayer)), "est en tête avec", realTimePosition[firstPlayer], "et", str(chr(ord('A') + lastPlayer)), "est en queue avec", realTimePosition[lastPlayer], flush=True)
+#
+        if realTimePosition[firstPlayer] >= LONGEUR_COURSE : # Si un cheval a fini
+            winner = chr(ord('A') + firstPlayer)
+            # print(f"\n\nLe gagnant est {winner} !")
+            keep_running.value = False # On arrête la course
+            # return winner # On retourne le gagnant
+#−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−
 def detourner_signal(signum, stack_frame) :
     move_to(24, 1)
     erase_line()
@@ -71,30 +51,86 @@ def detourner_signal(signum, stack_frame) :
     print("La course est interrompu ...")
     exit(0)
 # −−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−
+
+def predict(Nb_process):
+    """ 
+    Fonction de prédiction qui retourne un dictionnaire avec les chevaux et leur position initiale.
+    """
+    pordictPossible = [chr(ord('A') + i) for i in range(Nb_process)]
+    predict = input("Prédiction des chevaux misez sur le premier cheval (A, B, C, ...): ").strip().upper()
+    while predict not in pordictPossible:
+        print("Prédiction invalide. Veuillez entrer une lettre valide (A, B, C, ...).")
+        predict = input("Prédiction des chevaux misez sur le premier cheval (A, B, C, ...): ").strip().upper()
+    print(f"Votre prédiction est : {predict}")
+    return predict
+
+def getWinner(realTimePosition, LONGEUR_COURSE):
+    """
+    Fonction pour déterminer le gagnant de la course.
+    """
+    for i in range(len(realTimePosition)):
+        if realTimePosition[i] >= LONGEUR_COURSE:
+            return chr(ord('A') + i)  # Retourne le cheval gagnant
+    return None  # Aucun gagnant si aucun cheval n'a atteint la longueur de course
+
 # La partie principale :
 if __name__ == "__main__" :
     import platform
     if platform.system() == "Darwin" :
         mp.set_start_method('fork') # Nécessaire sous macos, OK pour Linux (voir le fichier des sujets)
         
-    LONGEUR_COURSE = 50 # Tout le monde aura la même copie (donc no need to have a ’value’)
-    keep_running=mp.Value(ctypes.c_bool, True)
+    winner = None # Le gagnant de la course
+    
+    LONGEUR_COURSE = 100 # Tout le monde aura la même copie (donc no need to have a ’value’)
     
     Nb_process=20
-    mes_process = [0 for i in range(Nb_process)]
     
+    keep_running=mp.Value(ctypes.c_bool, True)
+    realTimePosition = mp.Array('i', Nb_process)
+    
+    mes_process = [0 for i in range(Nb_process)]
+
+    processArbitre = mp.Process(target=arbitre, args=(keep_running, realTimePosition))
+    
+    prediction = predict(Nb_process)
+    
+    
+    processArbitre.start()
+
     effacer_ecran()
     curseur_invisible()
     
     # Détournement d’interruption
     signal.signal(signal.SIGINT, detourner_signal) # CTRL_C_EVENT ?
+    
     for i in range(Nb_process): # Lancer Nb_process processus
-        mes_process[i] = mp.Process(target=un_cheval, args= (i,keep_running,))
+        mes_process[i] = mp.Process(target=un_cheval, args= (i,keep_running, realTimePosition))
         mes_process[i].start()
         
-    move_to(Nb_process+10, 1)
-    print("tous lancés, CTRL−C arrêtera la course ...")
+    move_to(Nb_process+4, 1)
+    
+    print("tous lancés, CTRL-C arrêtera la course ...")
+    print(f"Votre prédiction est : {prediction}")
+    
     for i in range(Nb_process): mes_process[i].join()
-    move_to(24, 1)
+    winner = getWinner(realTimePosition, LONGEUR_COURSE)
+    
+    
+    en_couleur(CL_WHITE)
+    move_to(26, 1)
     curseur_visible()
+    
     print("Fini ... ", flush=True)
+    # print(winner)
+    if winner is not None and winner != prediction:
+        move_to(28, 1)
+        erase_line()
+        en_couleur(CL_RED)
+        print(f"Vous avez perdu, le gagnant est {winner} !", flush=True)
+    elif winner is not None and winner == prediction:
+        move_to(28, 1)
+        erase_line()
+        en_couleur(CL_GREEN)
+        print(f"Vous avez gagné, le gagnant est {winner} !", flush=True)
+    
+
