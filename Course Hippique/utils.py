@@ -41,3 +41,13 @@ def move_to(lig, col) : print("\033[" + str(lig) + ";" + str(col) + "f",end='')
 def en_couleur(Coul) : print(Coul,end='')
 def en_rouge() : print(CL_RED,end='') # Un exemple !
 def erase_line() : print(CLEARELN,end='')
+
+
+def replaceLetter(mot, lettre, replaceLetter):
+    res = ""
+    for i in range(len(mot)):
+        if mot[i] == lettre:
+            res += replaceLetter
+        else:
+            res += mot[i]
+    return res
