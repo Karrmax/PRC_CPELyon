@@ -60,14 +60,14 @@ if __name__ == "__main__":
         "cuisiniers": [{"id": i, "etat": 0, "commande": None} for i in range(nbCuisinier)] # etat 0:attend une commande du serveur, 1: prepare la commande
     }
     
-    
+    allProcessInfo = mp.Manager().dict(allProcessInfo)  # Use a manager to share state between processes
 
-    serverProcess = [mp.Process(target=server_process, args=(i,)) for i in range(nbServers)]
-    clientProcess = [mp.Process(target=client_process, args=(i,)) for i in range(nbClients)]
-    cuisinierProcess = [mp.Process(target=cuisinier_process, args=(i,)) for i in range(nbCuisinier)]
-    
+    serverProcess = [mp.Process(target=server_process, args=(i, allProcessInfo)) for i in range(nbServers)]
+    clientProcess = [mp.Process(target=client_process, args=(i, allProcessInfo)) for i in range(nbClients)]
+    cuisinierProcess = [mp.Process(target=cuisinier_process, args=(i, allProcessInfo)) for i in range(nbCuisinier)]
+
     for p in serverProcess + clientProcess + cuisinierProcess:
         p.start()
-    
+
     for p in serverProcess + clientProcess + cuisinierProcess:
         p.join()
