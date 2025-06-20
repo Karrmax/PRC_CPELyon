@@ -7,47 +7,23 @@ CL_DARKGRAY, CL_LIGHTRED, CL_LIGHTGREEN, CL_LIGHTBLU, CL_YELLOW, CL_LIGHTMAGENTA
 
 
 # La tache d''un cheval
-def un_cheval(chevalDesign, ma_ligne : int, keep_running, realTimePosition, mutexEcriture) : # ma_ligne commence à 0
+def un_cheval(chevalDesign, numCheval : int, keep_running, realTimePosition, mutexEcriture) : # numCheval commence à 0
     col=1
     while keep_running.value :
-        
         for i in range(len(chevalDesign)):
-            
-        
-            move_to(ma_ligne*4+i+1,col) # pour effacer toute ma ligne
+            move_to(numCheval*4+i+1,col) # pour effacer toute ma ligne
             erase_line_from_beg_to_curs()
-            en_couleur(lyst_colors[ma_ligne%len(lyst_colors)])
-            
+            en_couleur(lyst_colors[numCheval%len(lyst_colors)])
             lineToWrite = chevalDesign[i]
-            
             if 'A' in lineToWrite:
-                # print(chr(ord("A")+ma_ligne))
-                lineToWrite = replaceLetter(lineToWrite, 'A', chr(ord("A")+ma_ligne))
+                # print(chr(ord("A")+numCheval))
+                lineToWrite = replaceLetter(lineToWrite, 'A', chr(ord("A")+numCheval))
             mutexEcriture.acquire()
             print(lineToWrite, end="", flush=True)
             mutexEcriture.release()
-                
-        # print(f'_______\/', end='', flush=True)
-        
-        # move_to(ma_ligne*4+2,col) # pour effacer toute ma ligne
-        # erase_line_from_beg_to_curs()
-        
-        # print(f"/---- _.\\", end='', flush=True)
-        
-        # move_to(ma_ligne*4+3,col) # pour effacer toute ma ligne
-        # erase_line_from_beg_to_curs()
-        
-        # print(f'/|__{chr(ord("A")+ma_ligne)}__/', end='', flush=True)
-        
-        # move_to(ma_ligne*4+4,col) # pour effacer toute ma ligne
-        # erase_line_from_beg_to_curs()
-        
-        # print(f'/\ /\\', end='', flush=True)
-        # move_to(ma_ligne*4+1,col) # pour effacer toute ma ligne
-        # print(f'({chr(ord("A")+ma_ligne)}>', end='', flush=True) # Affiche le cheval
         col+=1
-        realTimePosition[ma_ligne] = col
-        
+        realTimePosition[numCheval] = col
+
         time.sleep(0.1 * random.randint(1,5))
     # désormais, c'est l'arbitre qui va geler la course en cas de finish
 #−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−
@@ -67,7 +43,7 @@ def arbitre(keep_running, realTimePosition, mutexEcriture):
         en_couleur(CL_WHITE)
         
         mutexEcriture.acquire()
-        print(str(chr(ord('A') + firstPlayer)), "est en tête avec", realTimePosition[firstPlayer], "et", str(chr(ord('A') + lastPlayer)), "est en queue avec", realTimePosition[lastPlayer], flush=True)
+        print(str(chr(ord('A') + firstPlayer)), "est en tête avec", realTimePosition[firstPlayer], "et", str(chr(ord('A') + lastPlayer)), "est dernier avec", realTimePosition[lastPlayer], flush=True)
         mutexEcriture.release()
 #
         if realTimePosition[firstPlayer] >= LONGEUR_COURSE : # Si un cheval a fini
@@ -88,13 +64,13 @@ def detourner_signal(signum, stack_frame) :
 # prediction 
 def predict(Nb_process):
     """ 
-    Fonction de prédiction qui retourne un dictionnaire avec les chevaux et leur position initiale.
+    Fonction de prédiction qui retourne la prédiction du joueur.
     """
     pordictPossible = [chr(ord('A') + i) for i in range(Nb_process)]
-    predict = input("Prédiction des chevaux misez sur le premier cheval (A, B, C, ...): ").strip().upper()
+    predict = input(f"Prédiction des chevaux misez sur le premier cheval (A, B, ..., {pordictPossible[-1]}): ").strip().upper()
     while predict not in pordictPossible:
-        print("Prédiction invalide. Veuillez entrer une lettre valide (A, B, C, ...).")
-        predict = input("Prédiction des chevaux misez sur le premier cheval (A, B, C, ...): ").strip().upper()
+        print(f"Prédiction invalide. Veuillez entrer une lettre valide (A, B, ..., {pordictPossible[-1]}).")
+        predict = input(f"Prédiction des chevaux misez sur le premier cheval (A, B, ..., {pordictPossible[-1]}): ").strip().upper()
     print(f"Votre prédiction est : {predict}")
     return predict
 
@@ -138,10 +114,10 @@ if __name__ == "__main__" :
     curseur_invisible()
     
     # Détournement d’interruption
-    signal.signal(signal.SIGINT, detourner_signal) # CTRL_C_EVENT ?
-    
-    # ----------------- crétation et lancement des process
-    for i in range(Nb_process): 
+    signal.signal(signal.SIGINT, detourner_signal)
+
+    # ----------------- création et lancement des process ---------------------
+    for i in range(Nb_process):
         mes_process[i] = mp.Process(target=un_cheval, args= (chevalDesign, i, keep_running, realTimePosition, mutexEcriture))
         
     for i in range(Nb_process):
@@ -162,12 +138,13 @@ if __name__ == "__main__" :
     curseur_visible()
     
     print("Fini ... ", flush=True)
-    # print(winner)
+    
     if winner is not None and winner != prediction:
         move_to(Nb_process*(len(chevalDesign)) + 6, 1)
         erase_line()
         en_couleur(CL_RED)
         print(f"Vous avez perdu, le gagnant est {winner} !", flush=True)
+        
     elif winner is not None and winner == prediction:
         move_to(Nb_process*(len(chevalDesign)) + 6, 1)
         erase_line()
