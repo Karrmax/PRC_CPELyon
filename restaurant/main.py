@@ -26,8 +26,8 @@ def server_process(server_id, info):
             client_id, commande = commandesClients.get()
             info["servers"][server_id]["commande"] = manager.list((client_id, commande))
             info["servers"][server_id]["etat"] = 1
-            info["servers"][server_id] = manager.dict(info["servers"][server_id])  # Ensure the server's state is updated in the manager
-            time.sleep(random.uniform(0.5, 1.5))  # Simulate processing time
+            info["servers"][server_id] = manager.dict(info["servers"][server_id])
+            time.sleep(random.uniform(0.5, 1.5))
             commandesServeurs.put((server_id, client_id, commande))
 
 def cuisinier_process(cuisinier_id, info):
@@ -35,7 +35,7 @@ def cuisinier_process(cuisinier_id, info):
         effacer_ecran()
         
         
-        server_id, client_id, commande = commandesServeurs.get()      # print(f"Cuisinier {cuisinier_id} is preparing order for Client {client_id} from Server {server_id}: {commande}")
+        server_id, client_id, commande = commandesServeurs.get()
         info["cuisiniers"][cuisinier_id]["commande"] = manager.list((server_id, client_id, commande))
         info["cuisiniers"][cuisinier_id] = manager.dict(info["cuisiniers"][cuisinier_id])
         time.sleep(random.uniform(3, 5))

@@ -39,7 +39,6 @@ def arbitre(keep_running, realTimePosition, mutexEcriture):
         lastPlayer = min(range(len(realTimePosition)), key=lambda i: realTimePosition[i])
         
         move_to(Nb_process*len(chevalDesign) + 2, 1)
-        # print(firstPlayer)
         en_couleur(CL_WHITE)
         
         mutexEcriture.acquire()
@@ -48,7 +47,6 @@ def arbitre(keep_running, realTimePosition, mutexEcriture):
 #
         if realTimePosition[firstPlayer] >= LONGEUR_COURSE : # Si un cheval a fini
             winner = chr(ord('A') + firstPlayer)
-            # print(f"\n\nLe gagnant est {winner} !")
             keep_running.value = False # On arrête la course
             # return winner # On retourne le gagnant
 #−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−−
