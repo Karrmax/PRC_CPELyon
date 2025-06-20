@@ -11,8 +11,8 @@ def frequence_de_hits_pour_n_essais(nb_iteration):
 
 if __name__ == "__main__" :
     baseTime = time.time()
-    
-    nb_total_iteration = 10000000 # Nombre d’essai pour l’estimation
+
+    nb_total_iteration = 10_000_000 # Nombre d’essai pour l’estimation
     nb_hits=frequence_de_hits_pour_n_essais(nb_total_iteration)
     print("Valeur estimée Pi par la méthode Mono-Processus : ", 4 *nb_hits / nb_total_iteration)
     

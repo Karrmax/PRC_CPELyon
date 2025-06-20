@@ -12,9 +12,7 @@ def demander(k_billes):
     verrouDemande.release()
 
 def rendre(k_billes):
-    verrouRendre.acquire()
     nbBilles.value += k_billes
-    verrouRendre.release()
     semBillesRendue.release()
 
 def travailleur(id, nb_billes):
@@ -35,11 +33,10 @@ if __name__ == "__main__":
     NB_MAX_BILLES = 20
     DEMANDES = [4, 3, 5, 2]
     
-    M = 5 # nb de répetitions
+    M = 2 # nb de répetitions
     N = len(DEMANDES)  # Nombre de travailleurs
     
     verrouDemande = mp.Lock()  # Verrou pour la demande de billes
-    verrouRendre = mp.Lock()   # Verrou pour le rendu de billes
     
     semBillesRendue = mp.Semaphore(0)  # Sémaphore pour gérer
 

@@ -20,7 +20,7 @@ if __name__ == "__main__":
     
     nbHits = mp.Value('i', 0)
     
-    nbIterations = 1e6
+    nbIterations = 1e7
     # print(nbIterations//nbProcess)
     for i in range(nbProcess) : my_procs[i] = mp.Process(target=processPI, args=(int(nbIterations//nbProcess), nbHits))
     

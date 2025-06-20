@@ -6,33 +6,24 @@ from utils import *
 possible_commands = [chr(i) for i in range(65, 91)]
 
 def client_process(client_id, info, tempsMin=3, tempsMax=10):
-    # print(f"Client {client_id} is starting.")
     while True:
         tempsAttente = random.randint(tempsMin, tempsMax)
         time.sleep(tempsAttente)
         
         commande = random.choice(possible_commands)
-        # if info["clients"]["id" == client_id]["commande"] == []:
         info["clients"][client_id]["commande"] += manager.list((commande))
-        # print(client_id,info["clients"][client_id]["commande"],commande)
-        # info["clients"]["id" == client_id]["etat"] = 1
-        # print(f"Client {client_id} is placing an order: {commande}")
         commandesClients.put((client_id, commande))
 
 def server_process(server_id, info):
-    # print(f"Server {server_id} is starting.")
     while True:
         if not commandesCuisiniers.empty():
             client_id, commande = commandesCuisiniers.get()
             info["servers"][server_id]["commande"] =  manager.list((client_id, commande))
             info["servers"][server_id]["etat"] = 0
             info["clients"][client_id]["commande"].remove(commande)  # Remove the command from the client's list
-            # info["clients"][client_id] = manager.dict(info["clients"][client_id])  # Ensure the client's state is updated in the manager
-            # print(f"Server {server_id} sending to client dish {client_id}: {commande}")
             
         elif not commandesClients.empty():
             client_id, commande = commandesClients.get()
-            # print(f"Server {server_id} is processing order from Client {client_id}: {commande}")
             info["servers"][server_id]["commande"] = manager.list((client_id, commande))
             info["servers"][server_id]["etat"] = 1
             info["servers"][server_id] = manager.dict(info["servers"][server_id])  # Ensure the server's state is updated in the manager
@@ -40,7 +31,6 @@ def server_process(server_id, info):
             commandesServeurs.put((server_id, client_id, commande))
 
 def cuisinier_process(cuisinier_id, info):
-    # print(f"Cuisinier {cuisinier_id} is starting.")
     while True:
         effacer_ecran()
         
@@ -48,38 +38,34 @@ def cuisinier_process(cuisinier_id, info):
         server_id, client_id, commande = commandesServeurs.get()      # print(f"Cuisinier {cuisinier_id} is preparing order for Client {client_id} from Server {server_id}: {commande}")
         info["cuisiniers"][cuisinier_id]["commande"] = manager.list((server_id, client_id, commande))
         info["cuisiniers"][cuisinier_id] = manager.dict(info["cuisiniers"][cuisinier_id])
-        # print(info["cuisiniers"]["id" == cuisinier_id])
         time.sleep(random.uniform(3, 5))
         commandesCuisiniers.put((client_id, commande))
         info["cuisiniers"][cuisinier_id]["commande"] = manager.list()
 
 
 def majore_dHomme(infos):
-    # print("Majore d'Homme is starting.")
     while True:
         commandesClientsList = [infos["clients"][i]["commande"] for i in range(len(infos["clients"]))]
         commandesServeursList = [infos["servers"][i]["commande"] for i in range(len(infos["servers"]))]
         commandesCuisiniersList = [infos["cuisiniers"][i]["commande"] for i in range(len(infos["cuisiniers"]))]
-        move_to(1,0) # pour effacer toute ma ligne
+        move_to(1,0)
         erase_line()
         for i in range(len(infos["clients"])):
-            move_to(1+i,0) # pour effacer toute ma ligne
+            move_to(1+i,0)
             erase_line()
             print(f"Client {i} - Commande: {infos['clients'][i]['commande']}")
         for i in range(len(infos["servers"])):
-            move_to(len(infos["clients"]) +1+i,0) # pour effacer toute ma ligne
+            move_to(len(infos["clients"]) +1+i,0)
             erase_line()
             if infos["servers"][i]["etat"] == 0:
                 print(f"Server {i} - Commande: {infos['servers'][i]['commande']}")
             else:
                 print(f"Server {i} - Apporte la commande: {infos['servers'][i]['commande']}")
-            # print(f"Server {i} - Commande: {infos['servers'][i]['commande']}, Etat: {infos['servers'][i]['etat']}")
         for i in range(len(infos["cuisiniers"])):
-            move_to(len(infos["clients"]) + len(infos["servers"]) + 1+i, 0) # pour effacer toute ma ligne
+            move_to(len(infos["clients"]) + len(infos["servers"]) + 1+i, 0)
             erase_line()
             print(f"Cuisinier {i} - Commande: {infos['cuisiniers'][i]['commande']}")
-        time.sleep(0.05)  # Update every 2 seconds
-        # print(infos)
+        time.sleep(0.05)
         pass
     
 if __name__ == "__main__":
@@ -99,7 +85,6 @@ if __name__ == "__main__":
 
     effacer_ecran()
     curseur_invisible()
-    #allProcessInfo["clients"][0]["commande"] = ["A", "B", "C"]  # Exemple de commande initiale pour le premier client
     
 
     majore_dHommeProcess = mp.Process(target=majore_dHomme, args=(allProcessInfo,))
